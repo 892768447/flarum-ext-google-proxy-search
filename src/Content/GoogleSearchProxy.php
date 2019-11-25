@@ -11,18 +11,18 @@ class GoogleSearchProxy implements RequestHandlerInterface
 {
     const HOST = 'www.google.com';
     
-    private function query($q, $num, $hl)
+    private function query($url)
     {
         try {
             $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://' . GoogleSearchProxy::HOST . '/search?newwindow=1&safe=active&num=' . $num . '&hl=' . $hl . '&gws_rd=ssl&q=' . $q);
+            curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36');
             $headers = [
                 'accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                'accept-language:' . $hl . ',zh;q=0.9, en;q=0.8',
+                'accept-language:zh-CN,zh;q=0.9, en;q=0.8',
                 'dnt:1',
                 'referer:https://' . GoogleSearchProxy::HOST . '/',
                 'sec-ch-ua:Google Chrome 78',
@@ -38,7 +38,13 @@ class GoogleSearchProxy implements RequestHandlerInterface
             if ($htmls === false) {
                 return '404 Not Found';
             } else {
-                return str_replace(GoogleSearchProxy::HOST, $_SERVER['HTTP_HOST'], $htmls);
+                $url = ((int)$_SERVER['SERVER_PORT'] == 443 ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/g?';
+                $htmls = str_replace(GoogleSearchProxy::HOST . '/', $_SERVER['HTTP_HOST'] . '/g?', $htmls);
+                //$htmls = str_replace('href="/', 'href="' . $url, $htmls);
+                //$htmls = str_replace('action="/', 'action="' . $url, $htmls);
+                //$htmls = str_replace('src="/', 'src="' . $url, $htmls);
+                $htmls = str_replace('="/', '="' . $url, $htmls);
+                return $htmls;
             }
         } catch (Exception $e) {
             return '404 Not Found';
@@ -49,16 +55,18 @@ class GoogleSearchProxy implements RequestHandlerInterface
     {
         $session = $request->getAttribute('session');
         $user_id = $session->get('user_id') ?: '';
-        $q = urlencode(trim(array_get($request->getQueryParams(), 'q')));
         if ($user_id === '' || empty($user_id)) {
             // 没有登录
             $url = ((int)$_SERVER['SERVER_PORT'] == 443 ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
             return new HtmlResponse('<!Doctype html><html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>哦豁!</title><script>alert("请先登录后再使用，谢谢！");window.location.href = "' . $url . '";</script></head><body></body></html>');
         } else {
             // 谷歌搜索结果并返回
-            $num = trim(array_get($request->getQueryParams(), 'num')) ?: '50';
-            $hl = trim(array_get($request->getQueryParams(), 'hl')) ?: 'zh-CN';
-            return new HtmlResponse($this->query($q, $num, $hl));
+            $query = $_SERVER['QUERY_STRING'];
+            if (strpos($query, '&q=') > 0 && strpos($query, 'search?') == false) {
+                $query = 'search?' . $query;
+            }
+            $url = 'https://' . GoogleSearchProxy::HOST . '/' . $query;
+            return new HtmlResponse($this->query($url));
         }
     }
 }
