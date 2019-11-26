@@ -10,6 +10,7 @@ use Zend\Diactoros\Response\HtmlResponse;
 class GoogleSearchProxy implements RequestHandlerInterface
 {
     const HOST = 'www.google.com';
+    const CHARTS = ['/og/', '/_/', '/gb/', '/adsid/', '/widget/', '/verify/', '/xjs/', '/images/', '/complete/', '/gen_204'];
     
     private function query($url)
     {
@@ -39,11 +40,26 @@ class GoogleSearchProxy implements RequestHandlerInterface
                 return '404 Not Found';
             } else {
                 $url = ((int)$_SERVER['SERVER_PORT'] == 443 ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/g?';
+                $htmls = str_replace('www.gstatic.com', 'google.pyqt.site', $htmls);
+                $htmls = str_replace('apis.google.com', 'google.pyqt.site', $htmls);
+                $htmls = str_replace('ssl.gstatic.com', 'google.pyqt.site', $htmls);
+                $htmls = str_replace('adservice.google.com', 'google.pyqt.site', $htmls);
+                $htmls = str_replace('ogs.google.com', 'google.pyqt.site', $htmls);
+                $htmls = str_replace('id.google.com', 'google.pyqt.site', $htmls);
                 $htmls = str_replace(GoogleSearchProxy::HOST . '/', $_SERVER['HTTP_HOST'] . '/g?', $htmls);
-                //$htmls = str_replace('href="/', 'href="' . $url, $htmls);
-                //$htmls = str_replace('action="/', 'action="' . $url, $htmls);
-                //$htmls = str_replace('src="/', 'src="' . $url, $htmls);
-                $htmls = str_replace('="/', '="' . $url, $htmls);
+                //$htmls = str_replace('www.google.com', 'google.pyqt.site', $htmls);
+                // 替换字符串
+                foreach (GoogleSearchProxy::CHARTS as $value) {
+                    $htmls = str_replace('="' . $value, '="https://google.pyqt.site' . $value, $htmls);
+                    $htmls = str_replace("='" . $value, "='https://google.pyqt.site" . $value, $htmls);
+                    $htmls = str_replace('url(/', 'url(https://google.pyqt.site/', $htmls);
+                    $htmls = str_replace('(g||"gen_204")', '"/google.pyqt.site/gen_204"', $htmls);
+                }
+                $htmls = str_replace('href="/', 'href="' . $url, $htmls);
+                $htmls = str_replace('action="/', 'action="' . $url, $htmls);
+                $htmls = str_replace('src="/', 'src="' . $url, $htmls);
+                // $htmls = str_replace('="/', '="' . $url, $htmls);
+                // $htmls = str_replace("='/", "='" . $url, $htmls);
                 return $htmls;
             }
         } catch (Exception $e) {
@@ -63,7 +79,7 @@ class GoogleSearchProxy implements RequestHandlerInterface
             // 谷歌搜索结果并返回
             $query = $_SERVER['QUERY_STRING'];
             if (strpos($query, '&q=') > 0 && strpos($query, 'search?') == false) {
-                $query = 'search?' . $query;
+            	$query = 'search?' . $query;
             }
             $url = 'https://' . GoogleSearchProxy::HOST . '/' . $query;
             return new HtmlResponse($this->query($url));
