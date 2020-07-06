@@ -8,4 +8,5 @@ return [
     (new Extend\Routes('forum'))
         ->get('/g', 'irony_google_search_proxy', Content\GoogleSearchProxy::class)
         ->post('/g', 'irony_google_search_proxy', Content\GoogleSearchProxy::class)
+        ->get('/url', 'irony_google_search_proxy_jump', Content\GoogleSearchProxyJump::class)
 ];

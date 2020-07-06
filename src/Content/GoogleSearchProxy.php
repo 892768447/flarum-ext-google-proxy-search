@@ -20,13 +20,13 @@ class GoogleSearchProxy implements RequestHandlerInterface
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36');
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36 Edg/83.0.478.58');
             $headers = [
-                'accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                'accept-language:zh-CN,zh;q=0.9, en;q=0.8',
-                'dnt:1',
+                'accept:text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'accept-language:zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+                'cache-control:max-age=0',
                 'referer:https://' . GoogleSearchProxy::HOST . '/',
-                'sec-ch-ua:Google Chrome 78',
                 'sec-fetch-dest:document',
                 'sec-fetch-mode:navigate',
                 'sec-fetch-site:same-origin',
@@ -58,6 +58,9 @@ class GoogleSearchProxy implements RequestHandlerInterface
                 $htmls = str_replace('href="/', 'href="' . $url, $htmls);
                 $htmls = str_replace('action="/', 'action="' . $url, $htmls);
                 $htmls = str_replace('src="/', 'src="' . $url, $htmls);
+                $htmls = str_replace('a.href=r;', '', $htmls);
+                $htmls = preg_replace('/https:\/\/pyqt.site\/url.*?url=/', '', $htmls);
+                // $htmls = preg_replace('/\/url\?.*?url=/', '', $htmls);
                 // $htmls = str_replace('="/', '="' . $url, $htmls);
                 // $htmls = str_replace("='/", "='" . $url, $htmls);
                 return $htmls;
